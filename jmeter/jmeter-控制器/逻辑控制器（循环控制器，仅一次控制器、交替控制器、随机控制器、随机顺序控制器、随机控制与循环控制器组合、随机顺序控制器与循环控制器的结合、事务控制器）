@@ -1,0 +1,97 @@
+循环控制器，对循环控制器下面的采样器进行指定运行次数，可以设置相应的数值，让采样器进行循环运行。
+
+在单个线程组中有多个采样器时，如果只需要对某个采样器进行循环时，可以在采样器中添加循环控制器，这样在线程运行时，其他采样器可以只执行一次。
+
+如果同时设置了线程组的循环次数和循环控制器的次数，那么循环控制器下的采样器的循环次数为两个数值相乘的结果。
+
+1）在添加了简单控制器的基础上，添加一个循环控制器，循环次数为5次，线程组的循环次数为1次。在循环控制器下添加一个登录请求：
+
+（登录请求需要放在循环控制器节点下，循环次数才启作用）
+
+（1）
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124612.png)
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124626.png)
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124630.png)
+
+运行结果如下图：
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124634.png)
+
+线程组设置循环次数3次，第一个简单控制器中的请求循环15次，第二个简单控制器的请求循环3次，总共18次：
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124637.png)
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124641.png)
+
+**仅一次控制器：**
+
+仅一次控制器，在循环执行中对该控制器下的请求进行执行一次，然后在接下来的循环执行中将会跳过该控制器下的所有请求。
+
+在进行登录的测试中，可以考虑将登录请求放在仅一次控制中，这样登录请求只执行一次。在并发查询时，可能会使用到仅一次控制器，在并发查询时，我们只需要登录请求执行一次即可。Jmeter中的仅一次控制器相当于[loadrunner](https://www.baidu.com/s?wd=loadrunner&tn=24004469_oem_dg&rsv_dl=gh_pl_sl_csd)中的init的初始化action。
+
+下面示范仅一次控制器在jmeter中的使用。设定线程组的循环次数为3次，在简单控制器下添加一个仅一次控制器，在仅一次控制器下添加一个登录请求，点击执行按钮，查看执行结果：
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124645.png)
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124649.png)
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124653.png)
+
+（注：仅一次控制器只能放在线程组合循环控制器中，否则其作用不会体现）
+
+4、交替控制器
+
+如下图交替控制器中添加3个sampler 循环控制器下添加一个交替控制器和一个sampler 并设置循环次数为3次
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124656.png)
+
+4.2：查看结果树发现有循环3次 循环书序为交替循环
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124658.png)
+
+5：随机控制器
+
+5.1：随机控制器下的sampler有添加3个 每运行一次会随机地运行一个sampler
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124701.png)
+
+6：随机顺序控制器
+
+6.1：随机顺序控制器执行一次会随机打乱执行它下面的所有的sampler一次
+
+PS：与【随机控制器】不同 【随机控制器】运行一次只随机运行它下面的一个sampler
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124704.png)
+
+7：随机控制器与循环控制器的结合
+
+7.1：【循环控制器】下有一个sampler和一个[随机控制器]；所以运行时【随机控制器】和【Debug Sampler】会顺序运行10次 只是每次【随机控制器】下的sampler会随机抽出来一个运行
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124708.png)
+
+7.2：查看结果树【随机控制器】中的sampler每循环一次随机运行一个 【循环控制器】下的sampler会跟随【随机控制器】中的sampler顺序执行
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124713.png)
+
+8：随机顺序控制器与循环控制器的结合
+
+8.1：如下图添加【循环控制器】 设置循环次数为3次
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124716.png)
+
+8.2：【随机顺序控制器】下的sampler会随着每一次的循环而随机打乱循环一次 【循环控制器】下的sampler会每次循环跟随者【随机顺序控制器】顺序执行
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124719.png)
+
+9：事务控制器
+
+9.1：事务控制器下的所有sampler会当做一套完整的事务来处理
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124722.png)
+
+9.2：查看聚合报告会统计【事务控制器】下的所有事务的聚合报告和总体的聚合报告
+
+​    ![0](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124729.png)

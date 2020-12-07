@@ -1,0 +1,95 @@
+# jmeter分布式测试部署操作流程.md
+
+场景：Windows控制远程linux服务器实现测试
+
+## 一、jmeter安装及部署
+
+A、安装
+
+linux安装jmeter，官网下载最新的二进制安装.tgz格式的包（尽量本机和服务端版本一致） 如下图： ![image](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124222.png)
+
+B、部署
+
+SecureCRTPortable 连接远程linux服务器，切换指定的路径后，rz+空格，进行文件上传（如下图），
+
+![image](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124222.png)
+
+上传完成后，tar命令解压 tar -zxvf apache-jmeter-5.3.tgz
+
+jmeter配置
+
+1、添加环境变量 修改系统变量：vi /etc/profile ，修改变量，source /etc/profile，让变量生效 export JMETER_HOME= /apps/var/jakarta/apache-jmeter-5.3 export  CLASSPATH=$JMETER_HOME/lib/ext/ApacheJMeter_core.jar:$JMETER_HOME/lib/jorphan.jar:$JMETER_HOME/lib/logkit-2.0.jar:$CLASSPATH export PATH=$JMETER_HOME/bin:$PATH
+
+2、设置完成后，执行jmeter -v，如下图，安装完成 ![image](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124222.png)
+
+## 二、配置
+
+## # linux
+
+### jmeter.properties修改
+
+1、修改server_port=1099   表示控制机要远程连接的端口号,即 remote_hosts=xxxx:8899
+
+2、server.rmi.localport=4000    执行机jmeter_server启动显示的端口启动的端口号
+
+3、server.rmi.ssl.disable=false  改为  server.rmi.ssl.disable=true
+
+### jmeter-server.sh修改
+
+RMI_HOST_DEF=-Djava.rmi.server.hostname=10.x.x.168  地址改成本机的ip地址，执行和控制机都需要改
+
+## # Windows
+
+### jmeter.properties修改
+
+1、查看linux执行机的ip地址，然后设置remote_hosts=执行机1:端口号,执行机2:端口号 2、修改server_port=1099   执行启动远程连接的端口号 ,remote_hosts配置成一致的端口号 3、server.rmi.ssl.disable=false   改为  server.rmi.ssl.disable=true 4、server.rmi.localport=4000     执行机jmeter_server启动显示的端口启动的端口号 5、查找到mode=Standard 项，将其前边的注释去掉（解决jmeter进行分布式测试，远程机器来运行脚本，在察看结果树中的响应数据项为空白）
+
+### jmeter-server.sh修改
+
+RMI_HOST_DEF=-Djava.rmi.server.hostname=10.8.18.168      地址改成本机的ip地址，执行和控制机都需要改
+
+### jmeter.bat
+
+新增set rmi_host=-Djava.rmi.server.hostname=本机ip
+
+修改set ARGS=%DUMP% %HEAP% %NEW% %SURVIVOR% %TENURING% %PERM% %DDRAW% %rmi_host%
+
+### 备注：如果需要一个linux服务器部署多台jmeter来多节点运行，只需要：
+
+1、复制jmeter安装包，然后修改jmeter-server的启动端口号
+
+RMI_HOST_DEF=-Djava.rmi.server.hostname=10.1.1.14
+
+${DIRNAME}/jmeter ${RMI_HOST_DEF} -Dserver_port=${SERVER_PORT:-1039} -s -j jmeter-server.log "$@" &
+
+2、修改jmeter.properties文件的端口号 server_port=1099和server.rmi.localport=4000
+
+，完成后./jmeter-server 启动服务
+
+# 三、执行操作步骤
+
+A、	远程启动linux下的  sh /apps/var/apache-jmeter-5.3/bin/jmeter-server
+
+![image](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124222.png)
+
+B、	启动Windows下的jmeter-server，然后点击jmeter.bat启动或者无图形界面启动
+
+C、命令行模式启动jmeter测试
+
+jmeter指令说明：
+
+-n   无GUI模式启动jmeter -t   指定执行的测试的jmeter的测试计划jmx文件 -l    --logfile   指定文件执行过程的结果保存的路径.jtl文件 -R  指定使用远程机执行文件，指定后会替换配置文件的配置 -r   启动所以远程主机，读取配置文件 -j   保存执行日志 -e   执行结束后转存测试报告 -O   测试报告输入的指定位置
+
+# 四、jmeter非GUI运行时的线程动态参数设置相关的参数化
+
+JMeter的测试计划在运行Sampler之前会先加载运行属性（jmeter.properties，system.properties等）文件，而且JMeter还提供了方法可以动态修改属性，在命令行中使用【-J】 来指定JMeter Properties，脚本里面使用__P() 函数来获取命令中指定的属性值，那么方法就出来了。
+
+![image](https://typora-lxx.oss-cn-beijing.aliyuncs.com/img/20200922124222.png)
+
+配置说明：
+
+1、并发数设置为${__P(threads,1)}，循环次数取消勾选Forever，设置为${__P(cycles,1)}，其中后面的1是默认值，作用是执行一次来调试脚本，这是__P函数的功能（虽然我一直都是用GUI模式来调试脚本的）
+
+2、执行时长设置为${__P(duration,60)}，默认1分钟（60s），如果同时设置了循环次数和执行时长，那么满足其中一个条件脚本就会停止。 执行次数=-1时即表示Forever
+
+jmeter  -n -t   C:\Users\lxx\Desktop\培训\分享脚本文件saas.jmx  -R  10.x.x.168:1099,10.x.x.168:1100  -Jthreads=10 -Jduration=120  -Jcycles=-1 -l C:\Users\lxx\Desktop\培训\测试报告和jtl日志\分享脚本文件saas_02.jtl -e  -o C:\Users\lxx\Desktop\培训\测试报告和jtl日志\分享脚本文件saas_012
